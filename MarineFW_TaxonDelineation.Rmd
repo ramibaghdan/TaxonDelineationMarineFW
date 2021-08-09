@@ -860,9 +860,9 @@ COI.alignments <- lapply(barcode_data_coil_filtered_sets, alignment.function)
 
 #Read in list of alignments, filtered data sets, and sample size criteria, if not in environment.----
 
-COI.alignments <- readRDS("COIalignmentsBranchio.Rdata")
-barcode_data_coil_filtered_sets <- readRDS("barcode_data_coil_filtered_setBranchio.Rdata")
-sample.check <- readRDS("samplecheckBranchio.Rdata")
+COI.alignments <- readRDS("COIalignmentsActino.Rdata")
+barcode_data_coil_filtered_sets <- readRDS("barcode_data_coil_filtered_setActino.Rdata")
+sample.check <- readRDS("samplecheckActino.Rdata")
 
 #Create clustering function to cluster sequences in each taxonomic group in the list of data sets.----
 
@@ -936,10 +936,6 @@ cluster.function <- function(COI.alignment) {
 
 #Execute cluster function on list of sequence alignments.
 clusters <- lapply(COI.alignments, cluster.function)
-#plot(clusters$Onychopoda[2][[1]])
-clustersCOI <- lapply(COI.alignments, cluster.function)
-
-
 
 #Create merge function to combine cluster data with original data sets by recordIDs.----
 
@@ -981,7 +977,7 @@ colored.dends <- list()
 #Obtain group names.
 groupnames <- names(clusters)
 
-color.dendrogram <- function(clusterhabitats, clustersCOI, groupnames) {
+color.dendrogram <- function(clusterhabitats, clusters, groupnames) {
   
   #Input: cluster.habitats, COI cluster objects, and cluster names.
   #Output: colored dendrograms
@@ -990,7 +986,7 @@ color.dendrogram <- function(clusterhabitats, clustersCOI, groupnames) {
   for (i in 1:length(clusterhabitats)){
     
     #Subset the dendrogram object.
-    dend <- clustersCOI[[i]][[2]]
+    dend <- clusters[[i]][[2]]
 
     #Get dendrogram labels.
     labels <- dend %>% labels()
@@ -1032,7 +1028,7 @@ color.dendrogram <- function(clusterhabitats, clustersCOI, groupnames) {
 }
 
 #Execute the color.dendrogram clusters on all the data sets.
-coldends <- color.dendrogram(cluster.habitats, clustersCOI, groupnames)
+coldends <- color.dendrogram(cluster.habitats, clusters, groupnames)
 
 #Obtain plot for Onychopoda.
 coldends[[1]] %>% plot(main = "Dendrogram for Onychopoda")
