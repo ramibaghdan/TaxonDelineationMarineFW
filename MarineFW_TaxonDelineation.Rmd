@@ -862,6 +862,8 @@ COI.alignments <- lapply(barcode_data_coil_filtered_sets, alignment.function)
 
 ```{r Clustering}
 
+#In this section, sequences are clustered, silhouette indices are computed, and results/figures are compiled.
+
 #Read in list of alignments, filtered data sets, and sample size criteria, if not in environment.----
 
 COI.alignments <- readRDS("COIalignmentsActino.Rdata")
