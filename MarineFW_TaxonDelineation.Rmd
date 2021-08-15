@@ -866,9 +866,9 @@ COI.alignments <- lapply(barcode_data_coil_filtered_sets, alignment.function)
 
 #Read in list of alignments, filtered data sets, and sample size criteria, if not in environment.----
 
-COI.alignments <- readRDS("COIalignmentsActino.Rdata")
-barcode_data_coil_filtered_sets <- readRDS("barcode_data_coil_filtered_setActino.Rdata")
-sample.check <- readRDS("samplecheckActino.Rdata")
+COI.alignments <- readRDS("COIalignmentsBranchio.Rdata")
+barcode_data_coil_filtered_sets <- readRDS("barcode_data_coil_filtered_setBranchio.Rdata")
+sample.check <- readRDS("samplecheckBranchio.Rdata")
 
 #Create clustering function to cluster sequences in each taxonomic group in the list of data sets.----
 
@@ -937,7 +937,6 @@ cluster.function <- function(COI.alignment) {
   cluster.name.sil <<- dplyr::inner_join(cluster.name, sil.data, by = "name")
   
   return(cluster.name.sil)
-  #return(clusters.COI)
 }
 
 #Execute cluster function on list of sequence alignments.
@@ -971,11 +970,84 @@ merge.function <- function(barcode_data_coil_filtered_sets, clusters) {
 cluster.habitats <- merge.function(barcode_data_coil_filtered_sets, clusters)
 
 #Save list of merged results.
-#saveRDS(cluster.habitats, "clusterhabitatsMalaco.RData")
+#saveRDS(cluster.habitats, "clusterhabitatsBranchio.RData")
 
 #Create function to produce colored dendrograms.----
 
-#Try to color dendrogram according to freshwater and marine.
+#Color dendrograms according to freshwater and marine.
+
+#Create clustering function again but obtain the dendrogram.
+
+cluster.function.dend <- function(COI.alignment) {
+  
+  #Input: sequence alignment object.
+  #Output: clustering results (includes each record's silhouette index and cluster number).
+  
+  #Convert alignment data to DNA Bin class using function from ape package.
+  dnaBin.COI <- as.DNAbin(COI.alignment)
+  class(dnaBin.COI)
+
+  #Create distance matrix. 
+  distanceMatrix <- dist.dna(dnaBin.COI, model = chosen.model, as.matrix = TRUE, pairwise.deletion = TRUE)
+
+  #Cluster using IdClusters function with previously defined parameters.
+  clusters.COI <<- IdClusters(distanceMatrix,
+                                   method = clustering.method,
+                                   cutoff = clustering.threshold,
+                                   showPlot = TRUE,
+                                   type = "both",
+                                   verbose = TRUE)
+
+  #Unlist clustering result to obtain data frame of results.
+  #clusters <- unlist(clusters.COI[[1]])
+  
+  #Check number of unique clusters.
+  length(unique(unlist(clusters.COI[[1]][1])))
+
+  #Unlist clustering results to obtain data frame of results.
+  cluster.assigned <<- unlist(clusters.COI[[1]], use.names = FALSE)
+
+  #Function to convert NA's to '0'
+  na.zero <- function (x) {
+      x[is.na(x)] <- 0
+      return(x)
+    }
+  
+  #Applying the na.zero function on the distance matrix.
+  distance_mat <<- na.zero(distanceMatrix)
+
+  ##Obtain silhouette indices.
+
+  #Calculate the silhouette indices - metric which explains how similar an object is to its own cluster when compared to other clusters. Ranges from -1 to +1.
+  sil <<- silhouette(cluster.assigned,distance_mat)
+  
+  #Summary of the Silhouette index
+  summary(sil)[2]
+
+  #Average Silhouette value.
+  avg.sil.val <- summary(sil)[[4]]
+  
+  #Plot the silhouette values.
+  silplot <- plot(sil, border=NA)
+
+  #For an elegant visualization use the fviz_silhouette function. 
+  sil.data.plot <<- fviz_silhouette(sil)
+  sil.data <- sil.data.plot$data
+
+  #Combine assigned clusters and record IDs.
+  cluster.name <- cbind("cluster" = cluster.assigned, "recordID" = colnames(distance_mat), "name" = c(1:length(cluster.assigned)))
+  
+  cluster.name <- as.data.frame(cluster.name)
+
+  #Combine cluster information with silhouette indices.
+  cluster.name.sil <<- dplyr::inner_join(cluster.name, sil.data, by = "name")
+  
+  #return(cluster.name.sil)
+  return(clusters.COI)
+}
+
+#Execute cluster function on list of sequence alignments (to obtain the dendrograms this time).
+clustersdend <- lapply(COI.alignments, cluster.function.dend)
 
 #Initiate list to input colored dendrograms.
 colored.dends <- list()
@@ -983,7 +1055,7 @@ colored.dends <- list()
 #Obtain group names.
 groupnames <- names(clusters)
 
-color.dendrogram <- function(clusterhabitats, clusters, groupnames) {
+color.dendrogram <- function(clusterhabitats, clustersdend, groupnames) {
   
   #Input: cluster.habitats, COI cluster objects, and cluster names.
   #Output: colored dendrograms
@@ -992,7 +1064,7 @@ color.dendrogram <- function(clusterhabitats, clusters, groupnames) {
   for (i in 1:length(clusterhabitats)){
     
     #Subset the dendrogram object.
-    dend <- clusters[[i]][[2]]
+    dend <- clustersdend[[i]][[2]]
 
     #Get dendrogram labels.
     labels <- dend %>% labels()
@@ -1034,7 +1106,7 @@ color.dendrogram <- function(clusterhabitats, clusters, groupnames) {
 }
 
 #Execute the color.dendrogram clusters on all the data sets.
-coldends <- color.dendrogram(cluster.habitats, clusters, groupnames)
+coldends <- color.dendrogram(cluster.habitats, clustersdend, groupnames)
 
 #Obtain plot for Onychopoda.
 coldends[[1]] %>% plot(main = "Dendrogram for Onychopoda")
@@ -1069,12 +1141,13 @@ samplecheck.function <- function(cluster.habitats, sample.check) {
 cluster.habitats.relevant <- samplecheck.function(cluster.habitats, sample.check)
 
 #Save list of data sets that will be used in statistical analyses downstream, if needed.
-#saveRDS(cluster.habitats.relevant, "clusterhabitatsrelevantMalaco.Rdata")
+#saveRDS(cluster.habitats.relevant, "clusterhabitatsrelevantBranchio.Rdata")
 
-#cluster.habitats.relevant <- readRDS("clusterhabitatsrelevantActino.Rdata")
+#cluster.habitats.relevant <- readRDS("clusterhabitatsrelevantBranchio.Rdata")
 
 
 #t-test function----
+
 #Determine the mean silhouette index value for freshwater and marine clusters and, using a t-test, determine if there is a statistically significant difference across the two groups.
 
 #Create function to run t-test analysis.
@@ -1214,32 +1287,57 @@ out.ind2 <- which(df.long.outliers$Sil.values %in% c(outliers2))
 df.long.outliers2 <- df.long.outliers[out.ind2,]
 
 
-####Histograms of silhouette values----
-
-#Plot freshwater and marine silhouette indices as a histogram by taxonomic group.
-
-#Obtain Silhouette indices for each sequence (Mysidae family).
-freshsil <- data.frame(fresh.sils[[7]])
-names(freshsil) <- "Cluster.sil.index"
-marinesil <- data.frame(marine.sils[[7]])
-names(marinesil) <- "Cluster.sil.index"
-
-#Combine marine and freshwater values.
-combined.fresh.marine <- rbind(freshsil,marinesil)
-combined.fresh.marine$type <- c(rep("Freshwater",length(freshsil$Cluster.sil.index)), rep("Marine",length(marinesil$Cluster.sil.index)))
-
-#Plot histogram and color by habitat type.
-ggplot(combined.fresh.marine, aes(x=Cluster.sil.index, fill = type)) + geom_histogram(alpha=0.5) + ggtitle("Mysidae Family") + theme(legend.text=element_text(size=10))
-
-#Find number of freshwater and marine values.
-combined.fresh.marine %>% filter(type == "Freshwater") %>% nrow()
-combined.fresh.marine %>% filter(type == "Marine") %>% nrow()
-
-
 ####Function to combine relevant statistical results----
+
+#Create second t-test function to retain only freshwater and marine average silhouette indices (relevant data for statistics).
+
+t.test.sil.2 <- function(cluster.habitat.relevant) {
+  
+  #Input: clustering results meeting sample size criteria
+  #Output: t-test results
+  
+  #Obtain counts of records grouped by clusters and habitats. 
+  cluster.habitat.relevant2 <- cluster.habitat.relevant %>% group_by(cluster.y, habitat.final.y) %>% mutate(count1 = n())
+  
+  #Obtain counts of records grouped by clusters only.
+  cluster.habitat.relevant2 <- cluster.habitat.relevant2 %>% group_by(cluster.y) %>% mutate(count2 = n())
+  
+  #Remove clusters containing one record.
+  cluster.habitat.relevant2 <- cluster.habitat.relevant2 %>% filter(count2 != 1)
+  
+  #Select for clusters that have one habitat type (either freshwater or marine).
+  cluster.habitat.relevant2 <- cluster.habitat.relevant2 %>% filter(count1 == count2)
+  
+  #Obtain the mean silhouette index value for each cluster.
+  cluster.habitat.relevant2 <- cluster.habitat.relevant2 %>% group_by(cluster.y) %>% mutate(mean.sil = mean(sil_width))
+  
+  #Select the mean silhouette indices for freshwater clusters only.
+  fresh.sil <- cluster.habitat.relevant2 %>% filter(habitat.final.y == "Freshwater")
+  uniqfreshsil <- fresh.sil[!duplicated(fresh.sil$cluster.y), ]
+  fresh.sils <- unique(uniqfreshsil$mean.sil)
+  
+  #Select the mean silhouette indices for marine clusters only.
+  marine.sil <- cluster.habitat.relevant2 %>% filter(habitat.final.y == "Marine")
+  uniqmarinesil <- marine.sil[!duplicated(marine.sil$cluster.y), ]
+  marine.sils <- unique(uniqmarinesil$mean.sil)
+
+  #Run t test to determine whether there is a significant difference between marine and freshwater silhouette indices.
+  t.test.result <- t.test(fresh.sils, marine.sils)
+  
+  #Obtain t-test results, freshwater and marine silhouette indices, and recordIDs for freshwater and marine records (to obtain length).
+  t.test.result.values <- list(t.test.result, fresh.sils, marine.sils, fresh.sil$recordID, marine.sil$recordID)
+  
+  return(t.test.result)
+  
+}
+
+#Execute t-test function on data sets.
+t.test.results <- lapply(cluster.habitats.relevant, t.test.sil.2)
 
 #Initiate empty list for statistical results.
 stat.data <- list()
+
+####IMPORTANT: for taxonomic classes where the datasets retained are at the ORDER level (Branchiopoda), call on the order_name from cluster data to create the tax.name object in the stat.extract function.
 
 stat.extract <- function(clusterdata, ttestresult) {
   
@@ -1250,7 +1348,7 @@ stat.extract <- function(clusterdata, ttestresult) {
   for(i in 1:length(clusterdata)) {
     
     #Obtain name of taxonomic group, number of unique bins, t-test freshwater mean estimate, t-test marine mean estimate, and t-test p-value. 
-    tax.name <- unique(clusterdata[[i]]$family_name)
+    tax.name <- unique(clusterdata[[i]]$order_name)
     uniqbins <- length(unique(clusterdata[[i]]$bin_uri))
 
     ttest.fresh.est <- ttestresult[[i]]$estimate[[1]]
@@ -1270,24 +1368,24 @@ statoutputs <- stat.extract(cluster.habitats.relevant, t.test.results)
 statoutputs <- do.call("rbind",statoutputs)
 
 #Add number of freshwater clusters to results.
-statoutputs$Fresh.clust <- sapply(fresh.sils, length)
+#statoutputs$Fresh.clust <- sapply(fresh.sils, length)
 
 #Use below code for Branchiopoda and Bivalvia group (or any group with one taxa in the list).
-#statoutputs$Fresh.clust <- length(fresh.sils)
+statoutputs$Fresh.clust <- length(fresh.sils)
 
 #Add number of marine clusters to results.
-statoutputs$Marine.clust <- sapply(marine.sils, length)
+#statoutputs$Marine.clust <- sapply(marine.sils, length)
 
 #Use below code for Branchiopoda and Bivalvia group.
-#statoutputs$Marine.clust <- length(marine.sils)
+statoutputs$Marine.clust <- length(marine.sils)
 
 #Add number of records in freshwater and marine clusters to results.
-statoutputs$Fresh.records <- sapply(fresh.sil, length)
-statoutputs$Marine.records <- sapply(marine.sil, length)
+#statoutputs$Fresh.records <- sapply(fresh.sil, length)
+#statoutputs$Marine.records <- sapply(marine.sil, length)
 
 #Use below code for Branchiopoda and Bivalvia group.
-#statoutputs$Fresh.records <- length(fresh.sil)
-#statoutputs$Marine.records <- length(marine.sil)
+statoutputs$Fresh.records <- length(fresh.sil)
+statoutputs$Marine.records <- length(marine.sil)
 
 #Find difference between freshwater and marine silhouette means and add to results.
 statoutputs$Difference <- (statoutputs$Fresh.av.sil - statoutputs$Marine.av.sil)
@@ -1325,7 +1423,7 @@ form.table$t.test.p.values <- round(form.table$t.test.p.values, 3)
 
 form.table
 #Save results.
-#saveRDS(form.table, "MalacoCompTableResults.RData")
+#saveRDS(form.table, "BranchioTableResults.RData")
 
 #Read in all results across taxonomic classes.
 
@@ -1397,10 +1495,6 @@ mean(resultstable$Marine.av.sil)
 adjusted.p <- p.adjust(form.table$t.test.p.values, method = "BH")
 adjusted.p
 
-#Check if previously significant p-values are still below 0.05
-adjusted.p[10]
-adjusted.p[15]
-
 #For clustering threshold of 0.03.
 #adjusted.p <- p.adjust(form.table$t.test.p.values, method = "BH")
 #adjusted.p
@@ -1471,28 +1565,29 @@ records.after.coil <- sum(records.after.coil)
 
 ####Silhouette plots for different families:----
 
+#In this section, silhouette plots were obtained for the Mysidae family.
 
 #Obtain freshwater clusters for families of interest.
-freshclusters <- cluster.habitats.relevant[[6]] %>% filter(habitat.final.y == "Freshwater")
-uniqfresh <- unique(freshclusters$cluster.x)
-
-#Re-run clustering for family of interest to obtain silhouette values.
-lapply(COI.alignments[6], cluster.function)
-sil2 <- fviz_silhouette(sil)
-sil2
-sil2 <- sil2$data %>% filter(cluster %in% uniqfresh)
-
-#Plot freshwater silhouette values for family of interest.
-ggplot(sil2) + geom_col(aes(x=name, y = sil_width, color = cluster,group = cluster)) + xlab("Sequence records") + ylab("Silhouette Width") + theme(axis.text.x=element_blank(), plot.title = element_text(hjust = 0.5)) + ggtitle("Freshwater Silhouette Plot")
-
-#Obtain marine clusters for family of interest.
-marineclusters <- cluster.habitats.relevant[[6]] %>% filter(habitat.final.y == "Marine")
-uniqmarine <- unique(marineclusters$cluster.x)
-sil3 <- fviz_silhouette(sil)
-sil3 <- sil3$data %>% filter(cluster %in% uniqmarine)
-
-#Plot marine silhouette values for family of interest.
-ggplot(sil3) + geom_col(aes(x=name, y = sil_width, color = cluster,group = cluster)) + xlab("Sequence records") + ylab("Silhouette Width") + theme(axis.text.x=element_blank(), plot.title = element_text(hjust = 0.5)) + ggtitle("Marine Silhouette Plot")
+# freshclusters <- cluster.habitats.relevant[[6]] %>% filter(habitat.final.y == "Freshwater")
+# uniqfresh <- unique(freshclusters$cluster.x)
+# 
+# #Re-run clustering for family of interest to obtain silhouette values.
+# lapply(COI.alignments[6], cluster.function)
+# sil2 <- fviz_silhouette(sil)
+# sil2
+# sil2 <- sil2$data %>% filter(cluster %in% uniqfresh)
+# 
+# #Plot freshwater silhouette values for family of interest.
+# ggplot(sil2) + geom_col(aes(x=name, y = sil_width, color = cluster,group = cluster)) + xlab("Sequence records") + ylab("Silhouette Width") + theme(axis.text.x=element_blank(), plot.title = element_text(hjust = 0.5)) + ggtitle("Freshwater Silhouette Plot")
+# 
+# #Obtain marine clusters for family of interest.
+# marineclusters <- cluster.habitats.relevant[[6]] %>% filter(habitat.final.y == "Marine")
+# uniqmarine <- unique(marineclusters$cluster.x)
+# sil3 <- fviz_silhouette(sil)
+# sil3 <- sil3$data %>% filter(cluster %in% uniqmarine)
+# 
+# #Plot marine silhouette values for family of interest.
+# ggplot(sil3) + geom_col(aes(x=name, y = sil_width, color = cluster,group = cluster)) + xlab("Sequence records") + ylab("Silhouette Width") + theme(axis.text.x=element_blank(), plot.title = element_text(hjust = 0.5)) + ggtitle("Marine Silhouette Plot")
 
 ####Linear Model----
 
