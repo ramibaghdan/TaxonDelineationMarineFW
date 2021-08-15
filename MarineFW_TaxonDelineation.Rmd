@@ -113,7 +113,7 @@ clustering.method <- "single"
 
 ```{r Data download and preliminary filtering, results = 'hide', message=FALSE, warning=FALSE}
 
-#Download records for taxonomic classes of interest from BOLD
+#In this section, records for a taxonomic class of interest is downloaded from BOLD. Preliminary filtering of the data set removes low quality records (see below filter.records function for details).
 
 ####
 #Example: Download Malacostraca records from BOLD.
@@ -1182,7 +1182,7 @@ ggplot(df.long.fresh, aes(x=factor(Taxa, levels=unique(Taxa)), y=Sil.values, col
 ggplot(df.long.marine, aes(x=factor(Taxa, levels=unique(Taxa)), y=Sil.values, color = Type)) + geom_violin() + theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust=0.5, colour = label.colors), plot.title = element_text(hjust = 0.5)) + xlab("Taxa") + ylab("Silhouette Values") + ggtitle(" Distribution of Marine Silhouette Values") + scale_colour_manual(values=group.colors)
 
 #Plot combined distributions.
-ggplot(df.long, aes(x=factor(Taxa, levels=unique(Taxa)), y=Sil.values, color = Type)) + geom_violin() + theme(axis.text.x = element_text(angle = 60, vjust = 0.9, hjust=0.9, colour = label.colors), plot.title = element_text(hjust = 0.5)) + xlab("Taxa") + ylab("Silhouette Values") + ggtitle(" Distribution of Silhouette Values") + scale_colour_manual(values=group.colors) + facet_grid(. ~ Type, scales = "free_y")
+ggplot(df.long, aes(x=factor(Taxa, levels=unique(Taxa)), y=Sil.values, color = Type)) + geom_violin() + theme(axis.text.x = element_text(angle = 60, vjust = 0.9, hjust=0.9, colour = label.colors), plot.title = element_text(hjust = 0.5), legend.position = "None") + xlab("Taxa") + ylab("Silhouette Values") + ggtitle(" Distribution of Silhouette Values") + scale_colour_manual(values=group.colors) + facet_grid(. ~ Type, scales = "free_y")
 
 #Box plot to observe outliers.
 boxplotgraph <- ggplot(df.long, aes(x=factor(Taxa, levels=unique(Taxa)), y=Sil.values, color = Type)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 60, vjust = 0.9, hjust=0.9, colour = label.colors), plot.title = element_text(hjust = 0.5)) + xlab("Taxa") + ylab("Silhouette Values") + ggtitle(" Distribution of Silhouette Values") + scale_colour_manual(values=group.colors) + facet_grid(. ~ Type)
@@ -1386,7 +1386,6 @@ master.t.test.result
 #Find mean freshwater and silhouette overall.
 mean(resultstable$Fresh.av.sil)
 mean(resultstable$Marine.av.sil)
-
 
 #Adjusted p-values according to Benjamini & Hochberg method for taxon-specific t-tests.
 adjusted.p <- p.adjust(form.table$t.test.p.values, method = "BH")
