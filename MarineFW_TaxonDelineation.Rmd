@@ -197,6 +197,8 @@ length(unique(dataset$bin_uri))
 
 ```{r Habitat Assignments: WoRMS}
 
+#In this section, environment data from WoRMS (speciesprofile.txt and taxon.txt) is used to assign a habitat type to each record (freshwater or marine).
+
 #Read in the downloaded taxonomic information and environment profiles from WoRMS.
 speciesworms<- read_tsv("speciesprofile.txt")
 taxonworms <- read_tsv("taxon.txt")
@@ -288,7 +290,7 @@ filtered.records2$habitat.worms.genus[is.na(filtered.records2$habitat.worms.genu
 
 #Using latitude and longitude data, we assigned habitat designations to each record.
 
-#Determine whether a record was obtained over land or ocean using latitude and longitude values. Here, we are making the assumption that records obtained over land are freshwater species and those in seas/oceans are marine species. Of course, coastal habitats are more ambiguous, so this habitat designation was given the lowest priority over the other methods used. 
+#First, determine whether a record was obtained over land or ocean using latitude and longitude values. Here, we are making the assumption that records obtained over land are freshwater species and those in seas/oceans are marine species. Of course, coastal habitats are more ambiguous, so this habitat designation was given the lowest priority over the other methods used. 
 
 #To obtain GPS based habitat information, only records containing latitude and longitude are retained.
 
@@ -565,6 +567,8 @@ filtered.records2 <- rbind(filtered.records2.worms.species, filtered.records2.wo
 #BIN-level habitat designations
 
 ###
+
+#In this section, habitat types are assigned to an entire BIN (instead of only each record). If there is a conflict of habitat types across records within a BIN, the designation making up 80% or more of the records with a habitat type is assigned to the entire BIN. Otherwise, an "na" is assigned. Afterwards, we retain families (or orders) that have at least 3 BINs of each habitat type (or any other number specified in the parameter section).
 
 #Obtain number of records in each BIN by habitat designation.
 filtered.records2 <- filtered.records2 %>% group_by(bin_uri, habitat.final) %>% mutate(count = n())
