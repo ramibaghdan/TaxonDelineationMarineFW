@@ -976,7 +976,7 @@ cluster.habitats <- merge.function(barcode_data_coil_filtered_sets, clusters)
 
 #Color dendrograms according to freshwater and marine.
 
-#Create clustering function again but obtain the dendrogram.
+#Create clustering function again but obtain the dendrogram only.
 
 cluster.function.dend <- function(COI.alignment) {
   
@@ -998,51 +998,6 @@ cluster.function.dend <- function(COI.alignment) {
                                    type = "both",
                                    verbose = TRUE)
 
-  #Unlist clustering result to obtain data frame of results.
-  #clusters <- unlist(clusters.COI[[1]])
-  
-  #Check number of unique clusters.
-  length(unique(unlist(clusters.COI[[1]][1])))
-
-  #Unlist clustering results to obtain data frame of results.
-  cluster.assigned <<- unlist(clusters.COI[[1]], use.names = FALSE)
-
-  #Function to convert NA's to '0'
-  na.zero <- function (x) {
-      x[is.na(x)] <- 0
-      return(x)
-    }
-  
-  #Applying the na.zero function on the distance matrix.
-  distance_mat <<- na.zero(distanceMatrix)
-
-  ##Obtain silhouette indices.
-
-  #Calculate the silhouette indices - metric which explains how similar an object is to its own cluster when compared to other clusters. Ranges from -1 to +1.
-  sil <<- silhouette(cluster.assigned,distance_mat)
-  
-  #Summary of the Silhouette index
-  summary(sil)[2]
-
-  #Average Silhouette value.
-  avg.sil.val <- summary(sil)[[4]]
-  
-  #Plot the silhouette values.
-  silplot <- plot(sil, border=NA)
-
-  #For an elegant visualization use the fviz_silhouette function. 
-  sil.data.plot <<- fviz_silhouette(sil)
-  sil.data <- sil.data.plot$data
-
-  #Combine assigned clusters and record IDs.
-  cluster.name <- cbind("cluster" = cluster.assigned, "recordID" = colnames(distance_mat), "name" = c(1:length(cluster.assigned)))
-  
-  cluster.name <- as.data.frame(cluster.name)
-
-  #Combine cluster information with silhouette indices.
-  cluster.name.sil <<- dplyr::inner_join(cluster.name, sil.data, by = "name")
-  
-  #return(cluster.name.sil)
   return(clusters.COI)
 }
 
