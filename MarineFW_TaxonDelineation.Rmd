@@ -88,7 +88,7 @@ library("rnaturalearth")
 library("rnaturalearthdata")
 
 #Set working directory.
-setwd('~/Desktop/RA_Guelph/Project1')
+setwd('~/Desktop/RA_Guelph/Project1/TaxonDelineationMarineFW')
 
 #Set parameters.
 
@@ -127,7 +127,7 @@ clustering.method <- "single"
 
 #Read in the taxonomic data set saved in the working directory.
 
-dataset <- read_tsv("bold_dataBranchioGlobal.tsv")
+dataset <- read_tsv("Data/bold_dataBranchioGlobal.tsv")
 
 #Check unique BINs.
 unique(dataset$bin_uri)
@@ -866,9 +866,9 @@ COI.alignments <- lapply(barcode_data_coil_filtered_sets, alignment.function)
 
 #Read in list of alignments, filtered data sets, and sample size criteria, if not in environment.----
 
-COI.alignments <- readRDS("COIalignmentsBranchio.Rdata")
-barcode_data_coil_filtered_sets <- readRDS("barcode_data_coil_filtered_setBranchio.Rdata")
-sample.check <- readRDS("samplecheckBranchio.Rdata")
+COI.alignments <- readRDS("Data/COIalignmentsBranchio.Rdata")
+barcode_data_coil_filtered_sets <- readRDS("Data/barcode_data_coil_filtered_setBranchio.Rdata")
+sample.check <- readRDS("Data/samplecheckBranchio.Rdata")
 
 #Create clustering function to cluster sequences in each taxonomic group in the list of data sets.----
 
@@ -1161,10 +1161,10 @@ marine.sil <- sapply(t.test.results,"[[", 5)
 
 #Read in clustering results meeting sample size criteria for each group.
 
-chr.Actino <- readRDS("clusterhabitatsrelevantActino.Rdata")
-chr.Bivalvia <- readRDS("clusterhabitatsrelevantBivalvia.Rdata")
-chr.Branchio <- readRDS("clusterhabitatsrelevantBranchio.Rdata")
-chr.Malaco <- readRDS("clusterhabitatsrelevantMalaco.Rdata")
+chr.Actino <- readRDS("Data/clusterhabitatsrelevantActino.Rdata")
+chr.Bivalvia <- readRDS("Data/clusterhabitatsrelevantBivalvia.Rdata")
+chr.Branchio <- readRDS("Data/clusterhabitatsrelevantBranchio.Rdata")
+chr.Malaco <- readRDS("Data/clusterhabitatsrelevantMalaco.Rdata")
 
 #Obtain family/order names.
 actino.names <- unique(unlist(sapply(chr.Actino, "[[", 8)))
@@ -1383,25 +1383,25 @@ form.table
 #Read in all results across taxonomic classes.
 
 #Read in Malacostraca results and add row above families (so the name malacostraca is present).
-form.table1 <- readRDS("MalacoTableResults.RData")
+form.table1 <- readRDS("Data/MalacoTableResults.RData")
 malacovector <- c("Malacostraca", rep(NA,9))
 form.table1 <- rbind(malacovector, form.table1)
 form.table1[is.na(form.table1)] = ''
 
 #Read in Actinopterygii results and add row above families.
-form.table2 <- readRDS("ActinoTableResults.RData")
+form.table2 <- readRDS("Data/ActinoTableResults.RData")
 actinovector <- c("Actinopterygii", rep(NA,9))
 form.table2 <- rbind(actinovector, form.table2)
 form.table2[is.na(form.table2)] = ''
 
 #Read in Branchiopoda results
-form.table3 <- readRDS("BranchioTableResults.RData")
+form.table3 <- readRDS("Data/BranchioTableResults.RData")
 branchiovector <- c("Branchiopoda", rep(NA,9))
 form.table3 <- rbind(branchiovector, form.table3)
 form.table3[is.na(form.table3)] = ''
 
 #Read in Bivalvia results.
-form.table4 <- readRDS("BivalviaTableResults.RData")
+form.table4 <- readRDS("Data/BivalviaTableResults.RData")
 bivalviavector <- c("Bivalvia", rep(NA,9))
 form.table4 <- rbind(bivalviavector, form.table4)
 form.table4[is.na(form.table4)] = ''
@@ -1428,10 +1428,10 @@ form.tableall <- formattable(form.tableall, list(`Taxon` = taxon_formatter, `Fre
 
 #Read in table results for all taxonomic classes again (we need them without the formatting).
 
-form.table1 <- readRDS("MalacoTableResults.RData")
-form.table2 <- readRDS("ActinoTableResults.RData")
-form.table3 <- readRDS("BranchioTableResults.RData")
-form.table4 <- readRDS("BivalviaTableResults.RData")
+form.table1 <- readRDS("Data/MalacoTableResults.RData")
+form.table2 <- readRDS("Data/ActinoTableResults.RData")
+form.table3 <- readRDS("Data/BranchioTableResults.RData")
+form.table4 <- readRDS("Data/BivalviaTableResults.RData")
 
 #Combine results tables.
 form.tableall <- rbind(form.table2,form.table4,form.table3,form.table1)
@@ -1601,9 +1601,9 @@ chr.asellidae.filt <- chr.asellidae %>% filter(sil_width < 0.75)
 chr.gamm.filt <- chr.gamm %>% filter(sil_width < 0.7)
 
 #Read in original data sets.
-dataset.actino <- readRDS("datasetslistActino.RData")
-dataset.branchio <- readRDS("datasetslistBranchio.RData")
-dataset.malaco <- readRDS("datasetslistMalaco.RData")
+dataset.actino <- readRDS("Data/datasetslistActino.RData")
+dataset.branchio <- readRDS("Data/datasetslistBranchio.RData")
+dataset.malaco <- readRDS("Data/datasetslistMalaco.RData")
 
 #Subset taxa of interest.
 dataset.cyprinidae <- dataset.actino[[3]]
