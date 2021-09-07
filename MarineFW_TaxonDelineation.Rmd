@@ -86,6 +86,9 @@ library(formattable)
 library("rnaturalearth")
 #install.packages("rnaturalearthdata")
 library("rnaturalearthdata")
+library(rstatix)
+install.packages("ggpubr")
+library(ggpubr)
 
 #Set working directory.
 setwd('~/Desktop/RA_Guelph/Project1/TaxonDelineationMarineFW')
@@ -866,9 +869,9 @@ COI.alignments <- lapply(barcode_data_coil_filtered_sets, alignment.function)
 
 #Read in list of alignments, filtered data sets, and sample size criteria, if not in environment.----
 
-COI.alignments <- readRDS("Data/COIalignmentsBranchio.Rdata")
-barcode_data_coil_filtered_sets <- readRDS("Data/barcode_data_coil_filtered_setBranchio.Rdata")
-sample.check <- readRDS("Data/samplecheckBranchio.Rdata")
+COI.alignments <- readRDS("Data/COIalignmentsMalaco.Rdata")
+barcode_data_coil_filtered_sets <- readRDS("Data/barcode_data_coil_filtered_setMalaco.Rdata")
+sample.check <- readRDS("Data/samplecheckMalaco.Rdata")
 
 #Create clustering function to cluster sequences in each taxonomic group in the list of data sets.----
 
@@ -1096,20 +1099,20 @@ samplecheck.function <- function(cluster.habitats, sample.check) {
 cluster.habitats.relevant <- samplecheck.function(cluster.habitats, sample.check)
 
 #Save list of data sets that will be used in statistical analyses downstream, if needed.
-#saveRDS(cluster.habitats.relevant, "clusterhabitatsrelevantBranchio.Rdata")
+#saveRDS(cluster.habitats.relevant, "Data/clusterhabitatsrelevantBranchio.Rdata")
 
-#cluster.habitats.relevant <- readRDS("clusterhabitatsrelevantBranchio.Rdata")
+cluster.habitats.relevant <- readRDS("Data/clusterhabitatsrelevantBivalvia.Rdata")
 
 
-#t-test function----
+#Wilcoxon test function----
 
-#Determine the mean silhouette index value for freshwater and marine clusters and, using a t-test, determine if there is a statistically significant difference across the two groups.
+#Determine the mean silhouette index value for freshwater and marine clusters and, using an unpaired two-samples Wilcoxon test (or Mann-Whitney test), compare silhouette values across the two groups.
 
-#Create function to run t-test analysis.
-t.test.sil <- function(cluster.habitat.relevant) {
+#Create function to run Wilcoxon test analysis.
+w.test.sil <- function(cluster.habitat.relevant) {
   
   #Input: clustering results meeting sample size criteria
-  #Output: t-test results
+  #Output: Wilcoxon test results
   
   #Obtain counts of records grouped by clusters and habitats. 
   cluster.habitat.relevant2 <- cluster.habitat.relevant %>% group_by(cluster.y, habitat.final.y) %>% mutate(count1 = n())
@@ -1129,33 +1132,35 @@ t.test.sil <- function(cluster.habitat.relevant) {
   #Select the mean silhouette indices for freshwater clusters only.
   fresh.sil <- cluster.habitat.relevant2 %>% filter(habitat.final.y == "Freshwater")
   uniqfreshsil <- fresh.sil[!duplicated(fresh.sil$cluster.y), ]
-  fresh.sils <- unique(uniqfreshsil$mean.sil)
+  fresh.sils <- uniqfreshsil$mean.sil
   
   #Select the mean silhouette indices for marine clusters only.
   marine.sil <- cluster.habitat.relevant2 %>% filter(habitat.final.y == "Marine")
   uniqmarinesil <- marine.sil[!duplicated(marine.sil$cluster.y), ]
-  marine.sils <- unique(uniqmarinesil$mean.sil)
+  marine.sils <- uniqmarinesil$mean.sil
 
-  #Run t test to determine whether there is a significant difference between marine and freshwater silhouette indices.
-  t.test.result <- t.test(fresh.sils, marine.sils)
+  #Run unpaired Wilcoxon test to compare marine and freshwater silhouette indices.
+  w.test.result <- wilcox.test(fresh.sils, marine.sils, alternative = "two.sided")
   
-  #Obtain t-test results, freshwater and marine silhouette indices, and recordIDs for freshwater and marine records (to obtain length).
-  t.test.result.values <- list(t.test.result, fresh.sils, marine.sils, fresh.sil$recordID, marine.sil$recordID)
+  #Obtain statistical test results, freshwater and marine silhouette indices, and recordIDs for freshwater and marine records (to obtain lengths downstream).
+  w.test.result.values <- list(w.test.result, fresh.sils, marine.sils, fresh.sil$recordID, marine.sil$recordID)
   
-  return(t.test.result.values)
+  return(w.test.result.values)
   
 }
 
-#Execute t-test function on data sets.
-t.test.results <- lapply(cluster.habitats.relevant, t.test.sil)
+#Execute Wilcoxon test function on data sets.
+w.test.results <- lapply(cluster.habitats.relevant, w.test.sil)
+
+w.test.results2 <- sapply(w.test.results,`[`, 1)
 
 #Obtain average silhouette indicies from results for freshwater and marine clusters.
-fresh.sils <- sapply(t.test.results, "[[", 2)
-marine.sils <- sapply(t.test.results, "[[", 3)
+fresh.sils <- sapply(w.test.results, "[[", 2)
+marine.sils <- sapply(w.test.results, "[[", 3)
 
 #Obtain freshwater and marine records data sets (we will use these to count how many freshwater and marine records were used in the analysis).
-fresh.sil <- sapply(t.test.results,"[[", 4)
-marine.sil <- sapply(t.test.results,"[[", 5)
+fresh.sil <- sapply(w.test.results,"[[", 4)
+marine.sil <- sapply(w.test.results,"[[", 5)
 
 ####Violin plots to observe range of freshwater and marine silhouette values----
 
@@ -1181,12 +1186,12 @@ names(chr.Malaco) <- malaco.names
 #Combine all groups into one list.
 chr.all <- c(chr.Actino, chr.Bivalvia, chr.Branchio, chr.Malaco)
 
-#Run t.test function to obtain freshwater and marine silhouette values.
-t.test.results.violin <- lapply(chr.all, t.test.sil)
+#Run w.test function to obtain freshwater and marine silhouette values.
+w.test.results.violin <- lapply(chr.all, w.test.sil)
 
 #Obtain average silhouette indicies from results for freshwater and marine clusters.
-fresh.sils.violin <- sapply(t.test.results.violin, "[[", 2)
-marine.sils.violin <- sapply(t.test.results.violin, "[[", 3)
+fresh.sils.violin <- sapply(w.test.results.violin, "[[", 2)
+marine.sils.violin <- sapply(w.test.results.violin, "[[", 3)
 
 #Freshwater distribution.
 fresh.sils.violin.df <- sapply(fresh.sils.violin, '[', seq(max(sapply(fresh.sils.violin, length))))
@@ -1221,32 +1226,105 @@ ggplot(df.long, aes(x=factor(Taxa, levels=unique(Taxa)), y=Sil.values, color = T
 #Box plot to observe outliers.
 boxplotgraph <- ggplot(df.long, aes(x=factor(Taxa, levels=unique(Taxa)), y=Sil.values, color = Type)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 60, vjust = 0.9, hjust=0.9, colour = label.colors), plot.title = element_text(hjust = 0.5)) + xlab("Taxa") + ylab("Silhouette Values") + ggtitle(" Distribution of Silhouette Values") + scale_colour_manual(values=group.colors) + facet_grid(. ~ Type)
 
-####Check for outliers using boxplot.stats function----
+boxplotgraph
 
-#Check for number of clusters with average silhouette values.
+####Check for outliers----
+
+#Remove rows with NAs
 sum(!is.na(df.long$Sil.values))
+df.long <- na.omit(df.long)
 
-#Determine which cluster silhouette values are outliers, overall.
-outliers <- boxplot.stats(df.long$Sil.values)$out
-out.ind <- which(df.long$Sil.values %in% c(outliers))
-out.ind
+#Obtain outliers using the identify_outliers function.
 
-df.long.outliers <- df.long[out.ind,]
+####Check if data is normally distributed (using original data and log/sqrt transformed data). In this case, we find the data to not be normally distributed across the majority of the taxa, so a non-parametric test (unpaired two-sample Wilcoxon test) was used instead of a parametric test (Welch's t test).
 
-#Obtain number of taxa with outlier clusters.
-table(df.long.outliers$Taxa)
+#Check range of silhouette values.
+range(df.long$Sil.values)
 
-outliers2 <- boxplot.stats(df.long.outliers$Sil.values)$out
-out.ind2 <- which(df.long.outliers$Sil.values %in% c(outliers2))
+#Transform values using square root function.
+#df.long$Sil.values <- sqrt(df.long$Sil.values)
+#df.long <- na.omit(df.long)
 
-df.long.outliers2 <- df.long.outliers[out.ind2,]
+#Transform values using log function (base e).
+#df.long$Sil.values <- log(df.long$Sil.values)
+#df.long <- na.omit(df.long)
+
+#It is best to split the data by taxon to obtain taxon-specific outliers for freshwater and marine indices.
+
+dataframes.outlier <- split(df.long, df.long$Taxa)
+
+#Create function to obtain outliers.
+
+outlier.fun <- function(df) {
+  
+  df.idout <- df %>% 
+  group_by(Type) %>% filter(!is.na(Sil.values)) %>%
+  identify_outliers(Sil.values)
+  
+  return(df.idout)
+  
+}
+
+df.long.idout <- lapply(dataframes.outlier, outlier.fun)
+df.long.idout <- do.call("rbind", df.long.idout)
+
+#Include only non-outlier cluster silhouette values.
+df.long.no.out <- df.long %>% anti_join(df.long.idout)
+
+#Checking normality by computing Shapiro Wilk test by group.
+
+#Split data frames by taxa.
+dataframes.noout <- split(df.long.no.out, df.long.no.out$Taxa)
+
+#Create function to check normality.
+normality.fun <- function(df) {
+  
+  df.norm <- df %>%
+  group_by(Type) %>% filter(!is.na(Sil.values)) %>%
+  shapiro_test(Sil.values)
+  
+  df.norm$Taxa <- unique(df$Taxa)
+  
+  return(df.norm)
+  
+}
+
+#Shapiro test does needs at least 3 samples (Dreissenidae must be excluded)
+df.long.norm.no.out <- lapply(dataframes.noout[-8], normality.fun)
+df.long.norm.no.out <- do.call("rbind", df.long.norm.no.out)
+
+#Check again including outliers.
+df.long.norm <- lapply(dataframes.outlier[-8], normality.fun)
+df.long.norm <- do.call("rbind", df.long.norm)
+
+#Re-organize column names
+df.long.norm.no.out <- df.long.norm.no.out[,c(5,1,2,3,4)]
+df.long.norm <- df.long.norm[,c(5,1,2,3,4)]
+
+#write_csv(df.long.norm.no.out, "normality_no_outliers.csv")
+#write_csv(df.long.norm, "normality_with_outliers.csv")
+#write_csv(df.long.norm.no.out, "normality_no_outliers_logtr.csv")
+#write_csv(df.long.norm, "normality_with_outliers_logtr.csv")
+#write_csv(df.long.norm.no.out, "normality_no_outliers_sqrttr.csv")
+#write_csv(df.long.norm, "normality_with_outliers_sqrttr.csv")
+
+#Divide data set into 2 for qqplots (visualizing normality) 
+dataframes.noout1 <- dataframes.noout[1:9]
+dataframes.noout2 <- dataframes.noout[10:18]
+dataframes.noout.combined1 <- do.call("rbind", dataframes.noout1)
+dataframes.noout.combined2 <- do.call("rbind", dataframes.noout2)
+
+# Draw a qq plot by group (two sets of data for visualization)
+ggqqplot(dataframes.noout.combined1, x = "Sil.values", facet.by = c("Type", "Taxa"))
+
+ggqqplot(dataframes.noout.combined2, x = "Sil.values", facet.by = c("Type", "Taxa"))
 
 
 ####Function to combine relevant statistical results----
 
-#Create second t-test function to retain only freshwater and marine average silhouette indices (relevant data for statistics).
+#Create second Wilcoxon test function to retain only freshwater and marine average silhouette indices (relevant data for statistics).
 
-t.test.sil.2 <- function(cluster.habitat.relevant) {
+w.test.sil.2 <- function(cluster.habitat.relevant) {
   
   #Input: clustering results meeting sample size criteria
   #Output: t-test results
@@ -1269,49 +1347,85 @@ t.test.sil.2 <- function(cluster.habitat.relevant) {
   #Select the mean silhouette indices for freshwater clusters only.
   fresh.sil <- cluster.habitat.relevant2 %>% filter(habitat.final.y == "Freshwater")
   uniqfreshsil <- fresh.sil[!duplicated(fresh.sil$cluster.y), ]
-  fresh.sils <- unique(uniqfreshsil$mean.sil)
+  fresh.sils <- uniqfreshsil$mean.sil
   
   #Select the mean silhouette indices for marine clusters only.
   marine.sil <- cluster.habitat.relevant2 %>% filter(habitat.final.y == "Marine")
   uniqmarinesil <- marine.sil[!duplicated(marine.sil$cluster.y), ]
-  marine.sils <- unique(uniqmarinesil$mean.sil)
+  marine.sils <- uniqmarinesil$mean.sil
+  
+  #######
 
+  # outlier.fun <- function(df) {
+  # 
+  # df.idout <- df %>% group_by(habitat.final.y) %>%
+  # identify_outliers(mean.sil)
+  # 
+  # return(df.idout)
+  # 
+  # }
+  # 
+  # fresh.sils.out <- outlier.fun(uniqfreshsil)
+  # marine.sils.out <- outlier.fun(uniqmarinesil)
+  # 
+  # fresh.no.out <- uniqfreshsil %>% anti_join(fresh.sils.out)
+  # marine.no.out <-uniqmarinesil %>% anti_join(marine.sils.out)
+  # 
+  # fresh.sils <- fresh.no.out$mean.sil
+  # marine.sils <- marine.no.out$mean.sil
+  # 
+  # clusterdata.no.out <- rbind(fresh.no.out, marine.no.out)
+  
+  ########
+  
   #Run t test to determine whether there is a significant difference between marine and freshwater silhouette indices.
-  t.test.result <- t.test(fresh.sils, marine.sils)
+  w.test.result <- wilcox.test(fresh.sils, marine.sils, alternative = "two.sided")
   
   #Obtain t-test results, freshwater and marine silhouette indices, and recordIDs for freshwater and marine records (to obtain length).
-  t.test.result.values <- list(t.test.result, fresh.sils, marine.sils, fresh.sil$recordID, marine.sil$recordID)
   
-  return(t.test.result)
+  w.test.result.values <- list(w.test.result, fresh.sils, marine.sils, fresh.sil$recordID, marine.sil$recordID)
+  
+  return(w.test.result.values)
   
 }
 
-#Execute t-test function on data sets.
-t.test.results <- lapply(cluster.habitats.relevant, t.test.sil.2)
+#Execute w-test function on data sets.
+w.test.results <- lapply(cluster.habitats.relevant, w.test.sil.2)
+
+
+w.test.results2 <- sapply(w.test.results,`[`, 1)
+
+#Obtain average silhouette indicies from results for freshwater and marine clusters.
+fresh.sils <- sapply(w.test.results, `[`, 2)
+marine.sils <- sapply(w.test.results, `[`, 3)
+
+#Obtain freshwater and marine records data sets (we will use these to count how many freshwater and marine records were used in the analysis).
+fresh.sil <- sapply(w.test.results,`[`, 4)
+marine.sil <- sapply(w.test.results,`[`, 5)
 
 #Initiate empty list for statistical results.
 stat.data <- list()
 
 ####IMPORTANT: for taxonomic classes where the datasets retained are at the ORDER level (Branchiopoda), call on the order_name from cluster data to create the tax.name object in the stat.extract function.
 
-stat.extract <- function(clusterdata, ttestresult) {
+stat.extract <- function(clusterdata, wtestresult, fresh.sils, marine.sils) {
   
-  #Input: clustering results meeting sample size criteria and t-test results.
+  #Input: clustering results meeting sample size criteria and Wilcoxon test results.
   #Output: data frame of statistical results.
   
   #Iterate over clustering results.
   for(i in 1:length(clusterdata)) {
     
-    #Obtain name of taxonomic group, number of unique bins, t-test freshwater mean estimate, t-test marine mean estimate, and t-test p-value. 
-    tax.name <- unique(clusterdata[[i]]$order_name)
+    #Obtain name of taxonomic group, number of unique bins, freshwater mean silhouette value, marine mean silhouette value, and w-test p-value. 
+    tax.name <- unique(clusterdata[[i]]$family_name)
     uniqbins <- length(unique(clusterdata[[i]]$bin_uri))
 
-    ttest.fresh.est <- ttestresult[[i]]$estimate[[1]]
-    ttest.marine.est <- ttestresult[[i]]$estimate[[2]]
-    ttest.pval <- ttestresult[[i]]$p.value
+    wtest.fresh.est <- mean(fresh.sils[[i]])
+    wtest.marine.est <- mean(marine.sils[[i]])
+    wtest.pval <- wtestresult[[i]]$p.value
   
     #Place results into data frame.
-    stat.data[[i]] <- data.frame("Taxon" = tax.name, "No.of.bins" = uniqbins, "Fresh.av.sil" = ttest.fresh.est, "Marine.av.sil" = ttest.marine.est, "t.test.p.values" = ttest.pval)
+    stat.data[[i]] <- data.frame("Taxon" = tax.name, "No.of.bins" = uniqbins, "Fresh.av.sil" = wtest.fresh.est, "Marine.av.sil" = wtest.marine.est, "w.test.p.values" = wtest.pval)
   }
   
   #Return list of statistical results.
@@ -1319,28 +1433,31 @@ stat.extract <- function(clusterdata, ttestresult) {
 }
 
 #Execute function to obtain results cohesively. 
-statoutputs <- stat.extract(cluster.habitats.relevant, t.test.results)
+#statoutputs <- stat.extract(cluster.habitats.relevant, w.test.results)
+statoutputs <- stat.extract(cluster.habitats.relevant, w.test.results2, fresh.sils, marine.sils)
+
+
 statoutputs <- do.call("rbind",statoutputs)
 
 #Add number of freshwater clusters to results.
-#statoutputs$Fresh.clust <- sapply(fresh.sils, length)
+statoutputs$Fresh.clust <- sapply(fresh.sils, length)
 
 #Use below code for Branchiopoda and Bivalvia group (or any group with one taxa in the list).
-statoutputs$Fresh.clust <- length(fresh.sils)
+statoutputs$Fresh.clust <- length(fresh.sils[[1]])
 
 #Add number of marine clusters to results.
-#statoutputs$Marine.clust <- sapply(marine.sils, length)
+statoutputs$Marine.clust <- sapply(marine.sils, length)
 
 #Use below code for Branchiopoda and Bivalvia group.
-statoutputs$Marine.clust <- length(marine.sils)
+statoutputs$Marine.clust <- length(marine.sils[[1]])
 
 #Add number of records in freshwater and marine clusters to results.
-#statoutputs$Fresh.records <- sapply(fresh.sil, length)
-#statoutputs$Marine.records <- sapply(marine.sil, length)
+statoutputs$Fresh.records <- sapply(fresh.sil, length)
+statoutputs$Marine.records <- sapply(marine.sil, length)
 
 #Use below code for Branchiopoda and Bivalvia group.
-statoutputs$Fresh.records <- length(fresh.sil)
-statoutputs$Marine.records <- length(marine.sil)
+statoutputs$Fresh.records <- length(fresh.sil[[1]])
+statoutputs$Marine.records <- length(marine.sil[[1]])
 
 #Find difference between freshwater and marine silhouette means and add to results.
 statoutputs$Difference <- (statoutputs$Fresh.av.sil - statoutputs$Marine.av.sil)
@@ -1368,40 +1485,44 @@ pvalue_formatter <- formatter("span",style = x ~ style(font.weight = "bold", col
 #Create table using formattable library. 
 form.table <- formattable(statoutputs, list(`Taxon` = formatter(
               "span", style = ~ style(color = "grey",font.weight = "bold")), `Fresh.av.sil`= color_tile(customGreen0, customGreen),
-  `Marine.av.sil`= color_tile(customGreen0, customGreen), `Difference` = difference_formatter, `t.test.p.values` = pvalue_formatter))
+  `Marine.av.sil`= color_tile(customGreen0, customGreen), `Difference` = difference_formatter, `w.test.p.values` = pvalue_formatter))
 
 #Round all values in the table to 3 digits.
 form.table$Fresh.av.sil <- round(form.table$Fresh.av.sil, 3)
 form.table$Marine.av.sil	<- round(form.table$Marine.av.sil, 3)
 form.table$Difference	<- round(form.table$Difference, 3)
-form.table$t.test.p.values <- round(form.table$t.test.p.values, 3)
+form.table$w.test.p.values <- round(form.table$w.test.p.values, 3)
 
 form.table
-#Save results.
-#saveRDS(form.table, "BranchioTableResults.RData")
 
+
+#Save results.
+#saveRDS(form.table, "W_BranchioTableResults.RData")
+#saveRDS(form.table, "W_MalacoTableResults.RData")
+#saveRDS(form.table, "W_ActinoTableResults.RData")
+#saveRDS(form.table, "W_BivalviaTableResults.RData")
 #Read in all results across taxonomic classes.
 
 #Read in Malacostraca results and add row above families (so the name malacostraca is present).
-form.table1 <- readRDS("Data/MalacoTableResults.RData")
+form.table1 <- readRDS("W_MalacoTableResults.RData")
 malacovector <- c("Malacostraca", rep(NA,9))
 form.table1 <- rbind(malacovector, form.table1)
 form.table1[is.na(form.table1)] = ''
 
 #Read in Actinopterygii results and add row above families.
-form.table2 <- readRDS("Data/ActinoTableResults.RData")
+form.table2 <- readRDS("W_ActinoTableResults.RData")
 actinovector <- c("Actinopterygii", rep(NA,9))
 form.table2 <- rbind(actinovector, form.table2)
 form.table2[is.na(form.table2)] = ''
 
 #Read in Branchiopoda results
-form.table3 <- readRDS("Data/BranchioTableResults.RData")
+form.table3 <- readRDS("W_BranchioTableResults.RData")
 branchiovector <- c("Branchiopoda", rep(NA,9))
 form.table3 <- rbind(branchiovector, form.table3)
 form.table3[is.na(form.table3)] = ''
 
 #Read in Bivalvia results.
-form.table4 <- readRDS("Data/BivalviaTableResults.RData")
+form.table4 <- readRDS("W_BivalviaTableResults.RData")
 bivalviavector <- c("Bivalvia", rep(NA,9))
 form.table4 <- rbind(bivalviavector, form.table4)
 form.table4[is.na(form.table4)] = ''
@@ -1420,7 +1541,7 @@ pvalue_formatter <- formatter("span",style = x ~ style(font.weight = "bold", col
 
 #Create table for all taxa using formattable library. 
 form.tableall <- formattable(form.tableall, list(`Taxon` = taxon_formatter, `Fresh.av.sil`= color_tile(customGreen0, customGreen),
-  `Marine.av.sil`= color_tile(customGreen0, customGreen), `Difference` = difference_formatter, `t.test.p.values` = pvalue_formatter))
+  `Marine.av.sil`= color_tile(customGreen0, customGreen), `Difference` = difference_formatter, `w.test.p.values` = pvalue_formatter))
 
 ####Master t-test and adjusted p-values----
 
@@ -1428,16 +1549,23 @@ form.tableall <- formattable(form.tableall, list(`Taxon` = taxon_formatter, `Fre
 
 #Read in table results for all taxonomic classes again (we need them without the formatting).
 
-form.table1 <- readRDS("Data/MalacoTableResults.RData")
-form.table2 <- readRDS("Data/ActinoTableResults.RData")
-form.table3 <- readRDS("Data/BranchioTableResults.RData")
-form.table4 <- readRDS("Data/BivalviaTableResults.RData")
+form.table1 <- readRDS("W_MalacoTableResults.RData")
+form.table2 <- readRDS("W_ActinoTableResults.RData")
+form.table3 <- readRDS("W_BranchioTableResults.RData")
+form.table4 <- readRDS("W_BivalviaTableResults.RData")
 
 #Combine results tables.
 form.tableall <- rbind(form.table2,form.table4,form.table3,form.table1)
 
 resultstable <- form.tableall
 
+master.normality <- rbind(shapiro_test(resultstable$Fresh.av.sil),shapiro_test(resultstable$Marine.av.sil))
+
+master.normality$variable <- c("Average freshwater values", "Average marine values")
+
+write_csv(master.normality, "masternormality_with_out.csv")
+
+ggqqplot(resultstable$Fresh.av.sil)
 #Execute t-test to determine whether there is a significant difference between overall marine and freshwater silhouette indices.
 master.t.test.result <- t.test(resultstable$Fresh.av.sil, resultstable$Marine.av.sil, paired = TRUE)
 master.t.test.result
