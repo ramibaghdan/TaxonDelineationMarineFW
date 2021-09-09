@@ -91,7 +91,7 @@ install.packages("ggpubr")
 library(ggpubr)
 
 #Set working directory.
-setwd('~/Desktop/RA_Guelph/Project1/TaxonDelineationMarineFW')
+#setwd('~/Desktop/RA_Guelph/Project1/TaxonDelineationMarineFW')
 
 #Set parameters.
 
@@ -869,9 +869,9 @@ COI.alignments <- lapply(barcode_data_coil_filtered_sets, alignment.function)
 
 #Read in list of alignments, filtered data sets, and sample size criteria, if not in environment.----
 
-COI.alignments <- readRDS("Data/COIalignmentsMalaco.Rdata")
-barcode_data_coil_filtered_sets <- readRDS("Data/barcode_data_coil_filtered_setMalaco.Rdata")
-sample.check <- readRDS("Data/samplecheckMalaco.Rdata")
+COI.alignments <- readRDS("Data/COIalignmentsBranchio.Rdata")
+barcode_data_coil_filtered_sets <- readRDS("Data/barcode_data_coil_filtered_setBranchio.Rdata")
+sample.check <- readRDS("Data/samplecheckBranchio.Rdata")
 
 #Create clustering function to cluster sequences in each taxonomic group in the list of data sets.----
 
