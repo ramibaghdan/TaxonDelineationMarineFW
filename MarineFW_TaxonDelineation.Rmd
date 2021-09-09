@@ -1370,20 +1370,20 @@ statoutputs <- stat.extract(cluster.habitats.relevant, w.test.results2, fresh.si
 statoutputs <- do.call("rbind",statoutputs)
 
 #Add number of freshwater clusters to results.
-statoutputs$Fresh.clust <- sapply(fresh.sils, length)
+#statoutputs$Fresh.clust <- sapply(fresh.sils, length)
 
 #Use below code for Branchiopoda and Bivalvia group (or any group with one taxa in the list).
 statoutputs$Fresh.clust <- length(fresh.sils)
 
 #Add number of marine clusters to results.
-statoutputs$Marine.clust <- sapply(marine.sils, length)
+#statoutputs$Marine.clust <- sapply(marine.sils, length)
 
 #Use below code for Branchiopoda and Bivalvia group.
 statoutputs$Marine.clust <- length(marine.sils)
 
 #Add number of records in freshwater and marine clusters to results.
-statoutputs$Fresh.records <- sapply(fresh.sil, length)
-statoutputs$Marine.records <- sapply(marine.sil, length)
+#statoutputs$Fresh.records <- sapply(fresh.sil, length)
+#statoutputs$Marine.records <- sapply(marine.sil, length)
 
 #Use below code for Branchiopoda and Bivalvia group.
 statoutputs$Fresh.records <- length(fresh.sil)
