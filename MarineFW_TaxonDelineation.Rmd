@@ -21,9 +21,9 @@ opts_chunk$set(tidy.opts=list(width.cutoff=50),tidy=TRUE)
 
 #Install and load required libraries.
 
-#install.packages("tidyverse")
+#install.packages("tidyverse",repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
 library(tidyverse)
-#install.packages("msa")
+#install.packages("msa",repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
 library(msa)
 #install.packages("dplyr",repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
 library(dplyr)
@@ -60,40 +60,47 @@ library(foreach)
 #source("http://bioconductor.org/biocLite.R")
 #BiocManager::install("annotate")
 library(annotate)
-#install.packages("factoextra")
+#install.packages("factoextra", repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
 library(factoextra)
-#install.packages("sf")
+#install.packages("sf",repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
 library(sf)
-#install.packages("spData")
-library(spData) #For `world`, an sf MULTIPOLYGON object
+#install.packages("spData",repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
+library(spData) 
+#install.packages("maptools",repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
 library(maptools)
+#Load world data for GPS based habitat designations.
 data(wrld_simpl)
 #devtools::install_github("CNuge/coil", build_vignettes = TRUE)
 library(coil)
 #install.packages("dendextend")
 library(dendextend)
-#install.packages("colorspace")
+#install.packages("colorspace",repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
 library(colorspace)
-#install.packages("ggplot2")
+#install.packages("ggplot2",repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
 library(ggplot2)
-#install.packages("hrbrthemes")
+#install.packages("hrbrthemes",repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
 library(hrbrthemes)
-#install.packages("ggalt")
+#install.packages("ggalt",repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
 library(ggalt)
-#install.packages("formattable")
+#install.packages("formattable",repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
 library(formattable)
-#install.packages("rnaturalearth")
+#install.packages("rnaturalearth",repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
 library("rnaturalearth")
-#install.packages("rnaturalearthdata")
+#install.packages("rnaturalearthdata",repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
 library("rnaturalearthdata")
+#install.packages("rstatix",repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
 library(rstatix)
-install.packages("ggpubr")
+#install.packages("ggpubr",repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
 library(ggpubr)
+#install.packages("rgeos", ,repos="https://mirror.rcg.sfu.ca/mirror/CRAN/")
+library(rgeos)
 
 #Set working directory.
 #setwd('~/Desktop/RA_Guelph/Project1/TaxonDelineationMarineFW')
 
 #Set parameters.
+
+#We use the Tamura and Nei 1993 (TN93) distance model for sequence clustering, an effective model for marine COI-5P sequences. For arctic aquatic insect species (Zhou et al., 2009) and most animal species (Hebert et al., 2003), barcode clusters using a 2% threshold resulted in similar estimations to the morphological species concept utilized by taxonomists. Furthermore, divergences at COI greater than 2% tend to be associated with reproductive isolation in freshwater fishes. Therefore, for our main analysis, a 2% clustering threshold was used.
 
 #Define the amount of missing data that will accepted for this analysis. This parameter is defined as the proportion of a sequence comprised of Ns, after trimming off terminal Ns and removing all gaps (-). 0.01 is used as a starting value, which means sequences with up to 1% of Ns or gaps will be be retained.
 
@@ -116,7 +123,7 @@ clustering.method <- "single"
 
 ```{r Data download and preliminary filtering, results = 'hide', message=FALSE, warning=FALSE}
 
-#In this section, records for a taxonomic class of interest is downloaded from BOLD. Preliminary filtering of the data set removes low quality records (see below filter.records function for details).
+#In this section, records for a taxonomic class of interest are downloaded from BOLD. Preliminary filtering of the data set removes low quality records (see below filter.records function for details).
 
 ####
 #Example: Download Malacostraca records from BOLD.
@@ -455,7 +462,7 @@ worms.index.mixed.genus <- which(filtered.records2$habitat.worms.species == "na"
 
 filtered.records2.worms.mixed.genus <- filtered.records2[worms.index.mixed.genus,]
 
-#4. For this study, records receiving a mixed designation at the species level will recieve a final habitat designation of "na" regardless of other designations obtained using habitat/region/exact-site or GPS information.
+#4. For this study, records receiving a mixed designation at the species level will receive a final habitat designation of "na" regardless of other designations obtained using habitat/region/exact-site or GPS information.
 
 worms.index.mixed.species <- which(filtered.records2$habitat.worms.species == "Mixed")
 filtered.records2.worms.mixed.species <- filtered.records2[worms.index.mixed.species,]
@@ -540,7 +547,7 @@ filtered.records2.noworms <- within(filtered.records2.noworms, habitat.final[hab
 
 filtered.records2.noworms <- within(filtered.records2.noworms, habitat.final[habitat.type.gps == 'Marine' & habitat.type.habreg == 'Marine'] <- 'Marine')
 
-#If a record has no GPS derived habitat designation but a habitat/region/exact-site derived designation (Marine or Freshwater), the record will recieve the habitat/region/exact-site designation, and vice-versa.
+#If a record has no GPS derived habitat designation but a habitat/region/exact-site derived designation (Marine or Freshwater), the record will receive the habitat/region/exact-site designation, and vice-versa.
 
 filtered.records2.noworms <- within(filtered.records2.noworms, habitat.final[habitat.type.gps == 'na' & habitat.type.habreg == 'na'] <- 'na')
 
@@ -582,7 +589,7 @@ bin.habitat.counts <- filtered.records2[,c("bin_uri","habitat.final","count")]
 #Obtain total number of records in each BIN.
 bin.habitat.counts2 <- bin.habitat.counts %>% group_by(bin_uri) %>% mutate(count2 = n())
 
-#Obtain distinct rows to focus only on unique BIN, habitat, and counts combination.
+#Obtain distinct rows to focus only on unique BIN, habitat, and counts combinations.
 unique.bin.hab.counts <- distinct(bin.habitat.counts2)
 
 #Obtain the habitat percentages for each BIN (proportion of records having a Marine, Freshwater, or na designation).
@@ -635,7 +642,7 @@ relevant.bins2 %>% filter(habitat.final == "Freshwater") %>% nrow()
 filtered.data.relevant <- dplyr::inner_join(filtered.records3, relevant.bins, by = "bin_uri")
 length(unique(filtered.data.relevant$bin_uri))
 
-#Among the retained BINs, check whether the next taxonomic rank (order) meets the sample size critera.
+#Among the retained BINs, check whether the next taxonomic rank (order) meets the sample size criteria.
 order.check <- filtered.data.relevant %>% group_by(order_name, bin_uri) %>% tally()
 
 #Include habitat information as well.
@@ -947,7 +954,7 @@ clusters <- lapply(COI.alignments, cluster.function)
 
 #Create merge function to combine cluster data with original data sets by recordIDs.----
 
-#Inititate empty list to include merged data frames.
+#Initiate empty list to include merged data frames.
 cluster.habitats <- list()
 
 merge.function <- function(barcode_data_coil_filtered_sets, clusters) {
@@ -1039,7 +1046,7 @@ color.dendrogram <- function(clusterhabitats, clustersdend, groupnames) {
     #Change dendrogram labels to I's (so only a horizontal colored line is observed; less cluttered)
     dend <- dend %>% set("labels", "I")
 
-    #Sort col_GROUP color palette according to habitats: Turqouise for Marine, Magenta for Freshwater, and Gray for na.
+    #Sort col_GROUP color palette according to habitats: Turquoise for Marine, Magenta for Freshwater, and Gray for na.
     col_GROUP[col_GROUP == "Marine"] <- "#00CED1"
     col_GROUP[col_GROUP == "Freshwater"] <- "#ff00ff"
     col_GROUP[col_GROUP == "na"] <- "#CCCCCC"
@@ -1077,7 +1084,7 @@ cluster.habitats.relevant <- list()
 
 samplecheck.function <- function(cluster.habitats, sample.check) {
   
-  #Input: list of clustering results with habitat information and list of sample size critera for each taxonomic group.
+  #Input: list of clustering results with habitat information and list of sample size criteria for each taxonomic group.
   #Output: list of clustering results with habitat information meeting sample size criteria.
   
   #Iterate over list of clustering results with habitat information.
@@ -1154,7 +1161,7 @@ w.test.results <- lapply(cluster.habitats.relevant, w.test.sil)
 
 w.test.results2 <- sapply(w.test.results,`[`, 1)
 
-#Obtain average silhouette indicies from results for freshwater and marine clusters.
+#Obtain average silhouette indices from results for freshwater and marine clusters.
 fresh.sils <- sapply(w.test.results, "[[", 2)
 marine.sils <- sapply(w.test.results, "[[", 3)
 
@@ -1189,7 +1196,7 @@ chr.all <- c(chr.Actino, chr.Bivalvia, chr.Branchio, chr.Malaco)
 #Run w.test function to obtain freshwater and marine silhouette values.
 w.test.results.violin <- lapply(chr.all, w.test.sil)
 
-#Obtain average silhouette indicies from results for freshwater and marine clusters.
+#Obtain average silhouette indices from results for freshwater and marine clusters.
 fresh.sils.violin <- sapply(w.test.results.violin, "[[", 2)
 marine.sils.violin <- sapply(w.test.results.violin, "[[", 3)
 
@@ -1209,13 +1216,13 @@ df.long.marine$Type <- c(rep("Marine", length(df.long.marine$Taxa)))
 #Combine freshwater and marine distributions.
 df.long <- rbind(df.long.fresh, df.long.marine)
 
-#Assign group colors (magenta for freshwater and turqouise for marine)
+#Assign group colors (magenta for freshwater and turquoise for marine)
 group.colors <- c(Freshwater = "#ff00ff", Marine = "#00CED1")
 
 #Assign x-axis label colors to represent taxonomic classes.
 label.colors <- c(rep("#AA4499",7),"#44AA99", "#999933",rep("#6699CC",9))
 
-#Plot individual dsitributions
+#Plot individual distributions.
 ggplot(df.long.fresh, aes(x=factor(Taxa, levels=unique(Taxa)), y=Sil.values, color = Type)) + geom_violin() + theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust=0.5, colour = label.colors), plot.title = element_text(hjust = 0.5)) + xlab("Taxa") + ylab("Silhouette Values") + ggtitle(" Distribution of Freshwater Silhouette Values") + scale_colour_manual(values=group.colors)
 
 ggplot(df.long.marine, aes(x=factor(Taxa, levels=unique(Taxa)), y=Sil.values, color = Type)) + geom_violin() + theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust=0.5, colour = label.colors), plot.title = element_text(hjust = 0.5)) + xlab("Taxa") + ylab("Silhouette Values") + ggtitle(" Distribution of Marine Silhouette Values") + scale_colour_manual(values=group.colors)
@@ -1298,7 +1305,7 @@ normality.fun <- function(df) {
   
 }
 
-#Shapiro test does needs at least 3 samples (Dreissenidae must be excluded)
+#Shapiro test needs at least 3 samples (Dreissenidae must be excluded)
 df.long.norm.no.out <- lapply(dataframes.noout[-8], normality.fun)
 df.long.norm.no.out <- do.call("rbind", df.long.norm.no.out)
 
