@@ -1441,25 +1441,25 @@ form.table
 #Read in all results across taxonomic classes.
 
 #Read in Malacostraca results and add row above families (so the name malacostraca is present).
-form.table1 <- readRDS("W_MalacoTableResultsComp.RData")
+form.table1 <- readRDS("W_MalacoTableResults.RData")
 malacovector <- c("Malacostraca", rep(NA,9))
 form.table1 <- rbind(malacovector, form.table1)
 form.table1[is.na(form.table1)] = ''
 
 #Read in Actinopterygii results and add row above families.
-form.table2 <- readRDS("W_ActinoTableResultsComp.RData")
+form.table2 <- readRDS("W_ActinoTableResults.RData")
 actinovector <- c("Actinopterygii", rep(NA,9))
 form.table2 <- rbind(actinovector, form.table2)
 form.table2[is.na(form.table2)] = ''
 
 #Read in Branchiopoda results
-form.table3 <- readRDS("W_BranchioTableResultsComp.RData")
+form.table3 <- readRDS("W_BranchioTableResults.RData")
 branchiovector <- c("Branchiopoda", rep(NA,9))
 form.table3 <- rbind(branchiovector, form.table3)
 form.table3[is.na(form.table3)] = ''
 
 #Read in Bivalvia results.
-form.table4 <- readRDS("W_BivalviaTableResultsComp.RData")
+form.table4 <- readRDS("W_BivalviaTableResults.RData")
 bivalviavector <- c("Bivalvia", rep(NA,9))
 form.table4 <- rbind(bivalviavector, form.table4)
 form.table4[is.na(form.table4)] = ''
