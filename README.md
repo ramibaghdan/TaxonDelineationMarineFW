@@ -57,11 +57,12 @@ Four taxonomic groups are covered: **Actinopterygii** (ray-finned fish), **Bival
 
 | Figure | What it shows |
 |---|---|
-| `W_DumbbellPlotcolored.png` | Average silhouette value (cluster cleanliness) for freshwater vs. marine members of each family, as paired points joined by a line. The length of each line is the marine/freshwater gap; color marks habitat type. The quick visual read of the whole study. |
-| `W_AllTableResults2.png` | Full results table at the 0.02 threshold: BIN count, number of clusters, record counts, average silhouette for each habitat, the freshwater-minus-marine difference, and the Wilcoxon p-value per family. |
-| `W_AllTableResults003_2.png` | The same results table at the 0.03 divergence threshold (sensitivity check). |
-| `W_AllTableResultsComp2.png` | Comparison view across the threshold/parameter settings. |
-| `W_DumbbellPlot003.png`, `W_DumbbellPlotComp.png` | Dumbbell plots for the 0.03 threshold and the comparison run. |
+| `figures/dumbbell_marine_vs_freshwater.png` | Average silhouette value (cluster cleanliness) for freshwater vs. marine members of each family, as paired points joined by a line. The length of each line is the marine/freshwater gap; color marks habitat type. The quickest visual read of the whole study. |
+| `figures/results_table_threshold02.png` | Full results table at the 0.02 threshold: BIN count, number of clusters, record counts, average silhouette for each habitat, the freshwater-minus-marine difference, and the Wilcoxon p-value per family. |
+| `figures/results_table_threshold03.png` | The same results table at the 0.03 divergence threshold (sensitivity check). |
+| `figures/results_table_comparison.png` | Comparison view of results across the threshold/parameter settings. |
+| `figures/dumbbell_threshold03.png` | Dumbbell plot for the 0.03 threshold. |
+| `figures/dumbbell_comparison.png` | Dumbbell plot for the comparison run. |
 
 ## What the analysis finds
 
@@ -79,9 +80,9 @@ to see which families have the largest marine/freshwater gaps.
 | Path | What it is |
 |---|---|
 | `MarineFW_TaxonDelineation.Rmd` | The full analysis: filtering, habitat classification, alignment, clustering, scoring, and plotting |
-| `Data/` | Input BOLD data and saved intermediate/result R objects (`.RData`) |
-| `W_*.png` | Result figures (tables and dumbbell plots) |
-| `W_*TableResults*.RData` | Saved result tables |
+| `figures/` | Result figures (dumbbell plots and results tables) |
+| `results/` | Saved result tables (`.RData`) |
+| `Data/` | Input BOLD data and saved intermediate R objects (`.RData`) |
 
 ## Data and tools
 
@@ -95,7 +96,6 @@ to see which families have the largest marine/freshwater gaps.
 ## Reproducing
 
 Open `MarineFW_TaxonDelineation.Rmd` in RStudio and knit, or run the chunks in order.
-The saved `.RData` objects in `Data/` let you reload intermediate steps without
-re-running the full pipeline (alignment and clustering on the larger groups are the
-slow steps).
-
+The saved `.RData` objects in `Data/` and `results/` let you reload intermediate steps
+without re-running the full pipeline (alignment and clustering on the larger groups are
+the slow steps).
